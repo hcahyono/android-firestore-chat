@@ -1,8 +1,8 @@
-package com.example.demofirestore;
+package com.example.demofirestore.view;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -12,33 +12,31 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
+import com.example.demofirestore.R;
+import com.example.demofirestore.adapter.RecycleViewAdapter;
+import com.example.demofirestore.contract.MessageListContract;
 import com.example.demofirestore.databinding.ActivityMainBinding;
+import com.example.demofirestore.model.ChatMessage;
+import com.example.demofirestore.presenter.MainAppPresenter;
 import com.firebase.ui.auth.AuthUI;
-import com.firebase.ui.firestore.FirestoreRecyclerAdapter;
-import com.firebase.ui.firestore.FirestoreRecyclerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.Query;
-import com.google.firebase.firestore.QuerySnapshot;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements MessageListContract.View {
 
     private ActivityMainBinding binding;
     private static final int SIGN_IN_REQUEST_CODE = 1;
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private FirestoreRecyclerAdapter adapter;
+
+    private RecycleViewAdapter adapter;
+    private MessageListContract.Presenter presenter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +44,11 @@ public class MainActivity extends AppCompatActivity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         View view = binding.getRoot();
         setContentView(view);
+
+        presenter = new MainAppPresenter(this);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this.getBaseContext());
+        layoutManager.setStackFromEnd(true);
+        binding.viewMessages.setLayoutManager(layoutManager);
 
         if(FirebaseAuth.getInstance().getCurrentUser() == null) {
             startActivityForResult(
@@ -63,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
                     .show();
 
             // Load chat room contents
-            displayChatMessages();
+            presenter.loadChatMessages();
         }
 
         binding.fab.setOnClickListener(new View.OnClickListener() {
@@ -92,31 +95,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void displayChatMessages() {
-        Query query = FirebaseFirestore.getInstance()
-                .collection("chats")
-                .orderBy("messageTime")
-                .limit(20);
-
-        query.addSnapshotListener(new EventListener<QuerySnapshot>() {
-            @Override
-            public void onEvent(@Nullable QuerySnapshot snapshot,
-                                @Nullable FirebaseFirestoreException e) {
-                if (e != null) {
-                    // Handle error
-                    //...
-                    return;
-                }
-
-                // Convert query snapshot to a list of chats
-                List<ChatMessage> chats = snapshot.toObjects(ChatMessage.class);
-
-                // Update UI
-               binding.listOfMessages.setAdapter(new MessageAdapter(MainActivity.this, chats));
-            }
-        });
-    }
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode,
                                     Intent data) {
@@ -128,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
                         "Successfully signed in. Welcome!",
                         Toast.LENGTH_LONG)
                         .show();
-                displayChatMessages();
+                presenter.loadChatMessages();
             } else {
                 Toast.makeText(this,
                         "We couldn't sign you in. Please try again later.",
@@ -167,4 +145,11 @@ public class MainActivity extends AppCompatActivity {
         }
         return true;
     }
+
+    @Override
+    public void setMessages(List<ChatMessage> messages) {
+        adapter = new RecycleViewAdapter(MainActivity.this, messages, FirebaseAuth.getInstance().getCurrentUser().getDisplayName());
+        binding.viewMessages.setAdapter(adapter);
+    }
+
 }

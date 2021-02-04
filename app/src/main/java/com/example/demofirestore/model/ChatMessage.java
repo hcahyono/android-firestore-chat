@@ -1,4 +1,4 @@
-package com.example.demofirestore;
+package com.example.demofirestore.model;
 
 import java.util.Date;
 
@@ -7,6 +7,7 @@ public class ChatMessage {
     private String messageText;
     private String messageUser;
     private long messageTime;
+
 
     public ChatMessage(String messageText, String messageUser) {
         this.messageText = messageText;
