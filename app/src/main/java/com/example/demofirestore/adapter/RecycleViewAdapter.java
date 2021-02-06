@@ -43,7 +43,7 @@ public class RecycleViewAdapter extends RecyclerView.Adapter<RecycleViewAdapter.
     @Override
     public int getItemViewType(int position) {
         ChatMessage message = messages.get(position);
-        if (message.getMessageUser().equalsIgnoreCase(currentUser)) {
+        if (message.getMessageUserId().equalsIgnoreCase(currentUser)) {
             return MY_MESSAGE;
         } else {
             return THEIR_MESSAGE;

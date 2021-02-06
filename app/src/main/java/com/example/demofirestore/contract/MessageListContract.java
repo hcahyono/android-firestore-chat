@@ -8,9 +8,11 @@ public class MessageListContract {
 
     public interface View{
         void setMessages(List<ChatMessage> messages);
+        void setCurrentRoom(String roomId);
     }
 
     public interface Presenter{
-        void loadChatMessages();
+        void loadChatMessages(String roomId);
+        void initRoom();
     }
 }
